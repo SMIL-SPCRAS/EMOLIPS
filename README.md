@@ -28,7 +28,7 @@ To train new lip-reading models, you should get acquainted the file ``train.py``
 
 To predict emotions and phrases for all videos in your folder, you should run the command ``python run.py --path_video video/ --path_save report/``. 
 
-To get new video file with visualization of emotion prediction for each frame, you should run the command ``python visualization.py``. Below are examples of test videos:
+To get new video file with visualization of emotions- and phrases predictions, you should run the command ``python visualization.py``. Below are examples of test videos:
 
 ### Citation
 

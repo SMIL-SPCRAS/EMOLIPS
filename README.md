@@ -1,10 +1,10 @@
 # EMOLIPS: Two-Level Approach for Emotional Speech Lip-Reading
 
 <h4 align="center">
-    <img src="./gif/1082_TAI_SAD_XX_NEU.gif" alt="NEU" width="24%" style="float: left; display: inline-block;"/>
-    <img src="./gif/1082_TAI_SAD_XX_6_emotions.gif" alt="6-Emotions" width="24%" style="float: left; display: inline-block;"/>
-    <img src="./gif/1082_TAI_SAD_XX_valence.gif" alt="valence" width="24%" style="float: left; display: inline-block;"/>
-    <img src="./gif/1082_TAI_SAD_XX_binary.gif" alt="binary" width="24%" style="float: left; display: inline-block;"/>
+    <img src="./gif/1082_TAI_SAD_XX_NEU.gif" alt="NEU" width="35%" style="float: left; display: inline-block;"/>
+    <img src="./gif/1082_TAI_SAD_XX_6_emotions.gif" alt="6-Emotions" width="35%" style="float: left; display: inline-block;"/>
+    <img src="./gif/1082_TAI_SAD_XX_valence.gif" alt="valence" width="35%" style="float: left; display: inline-block;"/>
+    <img src="./gif/1082_TAI_SAD_XX_binary.gif" alt="binary" width="35%" style="float: left; display: inline-block;"/>
 </h4>
 
 We propose two-level approach for emotional speech recognition based on visual speech data processing (EMOLIPS). On the first level, we recognize an emotion class/valence as a base for further analysis. On the second level, we apply three different emotional lip-reading strategies: (1) 6-Emotions, (2) Valence, and (3) Binary (emotional/neutral data) one. 

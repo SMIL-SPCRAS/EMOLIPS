@@ -103,20 +103,20 @@ class VideoCamera(object):
                 p_e = 'Pred valence: ' + 'NEG'
         elif self.type_lips_model == 2:
             if self.pred_emo==0:
-                p_e = 'Pred binary: ' + 'NEU'
+                p_e = 'Pred binary: ' + 'Neutral'
             else:
-                p_e = 'Pred binary: ' + 'not NEU'
+                p_e = 'Pred binary: ' + 'Emotional'
                 
             if self.true_emo==0:
-                t_e = 'True binary: ' + 'NEU'
+                t_e = 'True binary: ' + 'Neutral'
             else:
-                t_e = 'True binary: ' + 'not NEU'
+                t_e = 'True binary: ' + 'Emotional'
 
         t_p = 'True phrase: ' + self.true_phrase
         p_p = 'Pred phrase: ' + self.label_phrase[self.pred_phrase] + ' {:.2f}%'.format(self.prob_phrase[self.pred_phrase]*100)
         
         if self.type_lips_model == 0:
-            t_m = 'Type model: ' + '6 Emotion'
+            t_m = 'Type model: ' + '6-Emotions'
         elif self.type_lips_model == 1:
             t_m = 'Type model: ' + 'Valence'
         elif self.type_lips_model == 2:

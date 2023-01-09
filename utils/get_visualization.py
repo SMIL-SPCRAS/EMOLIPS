@@ -11,18 +11,27 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_face_mesh = mp.solutions.face_mesh
 
 class VideoCamera(object):
-    def __init__(self, path_video='', path_report='', path_save='', name_labels = '', conf=0.7):
+    def __init__(self, path_video='', path_report='', path_save='', type_lips_model=0):
         self.path_video = path_video
         self.df = pd.read_csv(path_report)
-        self.prob = pd.DataFrame(self.df.drop(['frame'], axis=1)).values
+        self.lips = np.asarray([61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185]).reshape(1,-1)
+        self.prob = pd.DataFrame(self.df.drop(['frame', 'emo'], axis=1)).values
+        self.pred_emo = self.df.emo[0]
+        self.true_emo = self.path_video.split('_')[-2]
+        self.true_phrase = self.path_video.split('_')[-3]
+        self.prob_phrase = np.sum(self.prob, axis=0)/np.sum(self.prob)
+        self.pred_phrase = np.argmax(self.prob_phrase)
+        self.type_lips_model = type_lips_model
+        self.label_emo = ['NEU', 'HAP', 'SAD', 'SUR', 'FEA', 'DIS', 'ANG']
+        self.label_phrase = ["DFA", "IEO", "IOM",
+                             "ITH", "ITS", "IWL",
+                             "IWW", "MTI", "TAI",
+                             "TIE", "TSI", "WSI"]
         self.sort_pred = np.argsort(-self.prob)
-        self.labels = name_labels
         self.path_save = path_save
-        self.conf = conf
         self.font = cv2.FONT_HERSHEY_SIMPLEX
         self.cur_frame = 0
         self.video = None
-        self.detector = RetinaFace(gpu_id=0)
 
     def __del__(self):
         self.video.release()
@@ -39,7 +48,7 @@ class VideoCamera(object):
         return cur_fr
         
 
-        def norm_coordinates(self, 
+    def norm_coordinates(self, 
         normalized_x: float, normalized_y: float, image_width: int,
         image_height: int):
 
@@ -60,19 +69,95 @@ class VideoCamera(object):
 
             if landmark_px:
                 idx_to_coors[idx] = landmark_px
-        x_min = np.min(np.asarray(list(idx_to_coors.values()))[:,0])
-        y_min = np.min(np.asarray(list(idx_to_coors.values()))[:,1])
-        endX = np.max(np.asarray(list(idx_to_coors.values()))[:,0])
-        endY = np.max(np.asarray(list(idx_to_coors.values()))[:,1])
+                
+        x_min = np.min(np.asarray(list(idx_to_coors.values()))[self.lips][:, :, 0])
+        y_min = np.min(np.asarray(list(idx_to_coors.values()))[self.lips][:, :, 1])
+        endX = np.max(np.asarray(list(idx_to_coors.values()))[self.lips][:, :, 0])
+        endY = np.max(np.asarray(list(idx_to_coors.values()))[self.lips][:, :, 1])
 
         (startX, startY) = (max(0, x_min), max(0, y_min))
         (endX, endY) = (min(w - 1, endX), min(h - 1, endY)) 
 
         return startX, startY, endX, endY
+    
+    def get_metadata(self):
+        overlay = self.fr.copy()
+        fontScale = (self.fr.shape[0])/720
+        
+        if self.type_lips_model == 0:
+            t_e = 'True emotion: ' + self.true_emo
+            p_e = 'Pred emotion: ' + self.label_emo[self.pred_emo]
+        elif self.type_lips_model == 1:
+            if self.true_emo==0:
+                t_e = 'True valence: ' + 'NEU'
+            elif self.true_emo==1:
+                t_e = 'True valence: ' + 'POS'
+            else:
+                t_e = 'True valence: ' + 'NEG'
+            
+            if self.pred_emo==0:
+                p_e = 'Pred valence: ' + 'NEU'
+            elif self.pred_emo==1:
+                p_e = 'Pred valence: ' + 'POS'
+            else:
+                p_e = 'Pred valence: ' + 'NEG'
+        elif self.type_lips_model == 2:
+            if self.pred_emo==0:
+                p_e = 'Pred binary: ' + 'NEU'
+            else:
+                p_e = 'Pred binary: ' + 'not NEU'
+                
+            if self.true_emo==0:
+                t_e = 'True binary: ' + 'NEU'
+            else:
+                t_e = 'True binary: ' + 'not NEU'
+
+        t_p = 'True phrase: ' + self.true_phrase
+        p_p = 'Pred phrase: ' + self.label_phrase[self.pred_phrase] + ' {:.2f}%'.format(self.prob_phrase[self.pred_phrase]*100)
+        
+        if self.type_lips_model == 0:
+            t_m = 'Type model: ' + '6 Emotion'
+        elif self.type_lips_model == 1:
+            t_m = 'Type model: ' + 'Valence'
+        elif self.type_lips_model == 2:
+            t_m = 'Type model: ' + 'Binary'
+            
+        thickness = 1
+        text_color = (255, 255, 255)
+        text_width, text_height = cv2.getTextSize(t_e, self.font, fontScale, thickness)
+        text_width = text_width[0]+int((self.fr.shape[0]*6)/720)
+
+        start_text_1 = self.fr.shape[0]-text_height
+        start_text_2 = self.fr.shape[0]-text_height*4
+        start_text_3 = self.fr.shape[0]-text_height*7
+        start_text_4 = self.fr.shape[0]-text_height*10
+        start_text_5 = self.fr.shape[0]-text_height*13
+        opacity = 0.3
+        
+        cv2.addWeighted(overlay, opacity, self.fr, 1 - opacity, 0, self.fr)
+        
+        cv2.rectangle(overlay, (int((self.fr.shape[0]*2)/720), start_text_1-int((self.fr.shape[0]*20)/720)), (int((self.fr.shape[0]*2)/720)+text_width, self.fr.shape[0]), (255, 0, 255), -1)
+        cv2.putText(self.fr, t_e, (int((self.fr.shape[0]*2)/720), start_text_1), self.font, fontScale, text_color, thickness)
+        
+        cv2.rectangle(overlay, (int((self.fr.shape[0]*2)/720), start_text_2-int((self.fr.shape[0]*20)/720)), (int((self.fr.shape[0]*2)/720)+text_width, self.fr.shape[0]), (255, 0, 255), -1)
+        cv2.putText(self.fr, p_e, (int((self.fr.shape[0]*2)/720), start_text_2), self.font, fontScale, text_color, thickness)
+        
+        cv2.rectangle(overlay, (int((self.fr.shape[0]*2)/720), start_text_3-int((self.fr.shape[0]*20)/720)), (int((self.fr.shape[0]*2)/720)+text_width, self.fr.shape[0]), (255, 0, 255), -1)
+        cv2.putText(self.fr, t_p, (int((self.fr.shape[0]*2)/720), start_text_3), self.font, fontScale, text_color, thickness)
+        
+        cv2.rectangle(overlay, (int((self.fr.shape[0]*2)/720), start_text_4-int((self.fr.shape[0]*20)/720)), (int((self.fr.shape[0]*2)/720)+text_width, self.fr.shape[0]), (255, 0, 255), -1)
+        cv2.putText(self.fr, p_p, (int((self.fr.shape[0]*2)/720), start_text_4), self.font, fontScale, text_color, thickness)
+        
+        cv2.rectangle(overlay, (int((self.fr.shape[0]*2)/720), start_text_5-int((self.fr.shape[0]*20)/720)), (int((self.fr.shape[0]*2)/720)+text_width, self.fr.shape[0]), (255, 0, 255), -1)
+        cv2.putText(self.fr, t_m, (int((self.fr.shape[0]*2)/720), start_text_5), self.font, fontScale, text_color, thickness)
+
+        # cv2.rectangle(fr, (2, start_text), (2+text_width, fr.shape[0]), (255, 0, 0), 2)
+
+#         return fr
 
     def draw_prob(self, emotion_yhat, best_n, startX, startY, endX, endY):
     
-        label = '{}: {:.2f}%'.format(self.labels[best_n[0]], emotion_yhat[best_n[0]]*100)
+        label = '{}: {:.2f}%'.format(self.label_phrase[best_n[0]], emotion_yhat[best_n[0]]*100)
         
         lw = max(round(sum(self.fr.shape) / 2 * 0.003), 2)
         
@@ -101,7 +186,6 @@ class VideoCamera(object):
         h = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.path_save += '.mp4'
         vid_writer = cv2.VideoWriter(self.path_save, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-        
         with mp_face_mesh.FaceMesh(
         max_num_faces=1,
         refine_landmarks=True,
@@ -110,6 +194,7 @@ class VideoCamera(object):
         
             while self.video.isOpened():
                 success, image = self.video.read()
+                self.fr = image
                 name_img = str(self.cur_frame).zfill(6)
                 if image is None: break
                 image.flags.writeable = False
@@ -118,11 +203,11 @@ class VideoCamera(object):
                 image.flags.writeable = True
                 if results.multi_face_landmarks:
                     for fl in results.multi_face_landmarks:
-                        startX, startY, endX, endY = self.get_box(fl, w, h)
+                        startX, startY, endX, endY  = self.get_box(fl, w, h)
                         prob = self.prob[self.cur_frame]
                         best = self.sort_pred[self.cur_frame]
                         self.draw_prob(prob, best, startX, startY, endX, endY)
-                        
+                        self.get_metadata()
                 self.cur_frame += 1
 
                 vid_writer.write(self.fr)

@@ -58,7 +58,6 @@ class ThreeDConvolutionResNet(keras.Model):
                 keras.layers.Dropout(rate = 0.2),
                 keras.layers.Bidirectional(keras.layers.LSTM(512, return_sequences=False)),
                 keras.layers.Dropout(rate = 0.2),
-                #keras.layers.LSTM(256,return_sequences = False),
                 keras.layers.Dense(output_shape, kernel_regularizer=regularizer),
                 keras.layers.Activation(output_activation, dtype='float32')
             ]

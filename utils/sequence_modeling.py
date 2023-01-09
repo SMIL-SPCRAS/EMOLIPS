@@ -25,39 +25,6 @@ def frame_thinning(df, fps, c_fr):
     n_frames= new_list(range(len(df)), count = c_n_frames)
     return n_frames
 
-def get_sequence(df, len_seq=10, step = 2, fps=30, c_fr=False):
-    uniq_n = list(df.name_video.unique())
-    paths = []
-    names = []
-    phrases = []
-    labels = []
-    for i in tqdm(uniq_n):
-        c_df = df[df.name_video==i]
-        c_df = c_df.reset_index(drop=True)
-        if c_fr: 
-            n_fr = frame_thinning(c_df, fps, c_fr)
-            c_df = c_df[c_df.index.isin(n_fr)]
-            c_df = c_df.reset_index(drop=True)
-        for c_id in range(0, len(c_df), round(len_seq/step)):
-            n_id = c_id+len_seq
-            c_path = c_df.loc[c_id:n_id-1].path_image.tolist()
-            c_name = c_df.loc[c_id:n_id-1].name_video.tolist()
-            c_phrase = c_df.loc[c_id:n_id-1].phrase.tolist()
-            c_labels = c_df.loc[c_id:n_id-1].id_class.tolist()
-            if len(c_path) < len_seq and len(c_path) != 0:
-                c_path.extend([c_path[-1]]*(len_seq - len(c_path)))
-                c_phrase.extend([c_phrase[-1]]*(len_seq - len(c_phrase)))
-                c_name.extend([c_name[-1]]*(len_seq - len(c_name)))
-                c_labels.extend([c_labels[-1]]*(len_seq - len(c_labels)))
-            if len(c_path) != 0:
-                paths.append(c_path)
-                phrases.append(c_phrase)
-                names.append(c_name)
-                labels.append(c_labels)            
-    return paths, names, phrases, labels
-
-
-
 def get_data(path, id_phrases):
     id_sp = [int(i.split('\\')[1].split('_')[0]) for i in path]
     name_video = [i.split('\\')[1] for i in path]
@@ -76,23 +43,23 @@ def get_data(path, id_phrases):
     return df
 
 
-def get_sequence_emo(all_path, all_feature, win = 10, step = 5):  
+def get_sequence(all_path, all_feature, win = 10, step = 5):
     seq_path = []
-    seq_feature_AN = []
+    seq_feature = []
     for id_cur in range(0, len(all_path)+1, step):
         need_id = id_cur+win
         curr_path = all_path[id_cur:need_id]
-        curr_FE_AN = all_feature[id_cur:need_id].numpy().tolist()
+        curr_FE = all_feature[id_cur:need_id].tolist()
         if len(curr_path) < win and len(curr_path) != 0:
             curr_path.extend([curr_path[-1]]*(win - len(curr_path)))
-            curr_FE_AN.extend([curr_FE_AN[-1]]*(win - len(curr_FE_AN)))
+            curr_FE.extend([curr_FE[-1]]*(win - len(curr_FE)))
         if len(curr_path) != 0:
             seq_path.append(curr_path)
-            seq_feature_AN.append(curr_FE_AN)
-    return seq_path, seq_feature_AN
+            seq_feature.append(curr_FE)
+    return seq_path, seq_feature
 
 
-def df_group_emo(df, label_model):
+def df_group(df, label_model):
     df_group = df.groupby(['frame']).agg({i:'mean' for i in label_model})
 
     df_group.reset_index(inplace=True)

@@ -82,11 +82,13 @@ class VideoCamera(object):
     
     def get_metadata(self):
         overlay = self.fr.copy()
-        fontScale = (self.fr.shape[0])/720
+        lw = max(round(sum(self.fr.shape) / 2 * 0.003), 2)
+        th = max(lw - 1, 1)
         
         if self.type_lips_model == 0:
             t_e = 'True emotion: ' + self.true_emo
             p_e = 'Pred emotion: ' + self.label_emo[self.pred_emo]
+            
         elif self.type_lips_model == 1:
             if self.true_emo==0:
                 t_e = 'True valence: ' + 'NEU'
@@ -101,6 +103,7 @@ class VideoCamera(object):
                 p_e = 'Pred valence: ' + 'POS'
             else:
                 p_e = 'Pred valence: ' + 'NEG'
+                
         elif self.type_lips_model == 2:
             if self.pred_emo==0:
                 p_e = 'Pred binary: ' + 'Neutral'
@@ -122,9 +125,8 @@ class VideoCamera(object):
         elif self.type_lips_model == 2:
             t_m = 'Type model: ' + 'Binary'
             
-        thickness = 1
         text_color = (255, 255, 255)
-        text_width, text_height = cv2.getTextSize(t_e, self.font, fontScale, thickness)
+        text_width, text_height = cv2.getTextSize(t_e, self.font, lw/2.5, th)
         text_width = text_width[0]+int((self.fr.shape[0]*6)/720)
 
         start_text_1 = self.fr.shape[0]-text_height
@@ -132,28 +134,12 @@ class VideoCamera(object):
         start_text_3 = self.fr.shape[0]-text_height*7
         start_text_4 = self.fr.shape[0]-text_height*10
         start_text_5 = self.fr.shape[0]-text_height*13
-        opacity = 0.3
         
-        cv2.addWeighted(overlay, opacity, self.fr, 1 - opacity, 0, self.fr)
-        
-        cv2.rectangle(overlay, (int((self.fr.shape[0]*2)/720), start_text_1-int((self.fr.shape[0]*20)/720)), (int((self.fr.shape[0]*2)/720)+text_width, self.fr.shape[0]), (255, 0, 255), -1)
-        cv2.putText(self.fr, t_e, (int((self.fr.shape[0]*2)/720), start_text_1), self.font, fontScale, text_color, thickness)
-        
-        cv2.rectangle(overlay, (int((self.fr.shape[0]*2)/720), start_text_2-int((self.fr.shape[0]*20)/720)), (int((self.fr.shape[0]*2)/720)+text_width, self.fr.shape[0]), (255, 0, 255), -1)
-        cv2.putText(self.fr, p_e, (int((self.fr.shape[0]*2)/720), start_text_2), self.font, fontScale, text_color, thickness)
-        
-        cv2.rectangle(overlay, (int((self.fr.shape[0]*2)/720), start_text_3-int((self.fr.shape[0]*20)/720)), (int((self.fr.shape[0]*2)/720)+text_width, self.fr.shape[0]), (255, 0, 255), -1)
-        cv2.putText(self.fr, t_p, (int((self.fr.shape[0]*2)/720), start_text_3), self.font, fontScale, text_color, thickness)
-        
-        cv2.rectangle(overlay, (int((self.fr.shape[0]*2)/720), start_text_4-int((self.fr.shape[0]*20)/720)), (int((self.fr.shape[0]*2)/720)+text_width, self.fr.shape[0]), (255, 0, 255), -1)
-        cv2.putText(self.fr, p_p, (int((self.fr.shape[0]*2)/720), start_text_4), self.font, fontScale, text_color, thickness)
-        
-        cv2.rectangle(overlay, (int((self.fr.shape[0]*2)/720), start_text_5-int((self.fr.shape[0]*20)/720)), (int((self.fr.shape[0]*2)/720)+text_width, self.fr.shape[0]), (255, 0, 255), -1)
-        cv2.putText(self.fr, t_m, (int((self.fr.shape[0]*2)/720), start_text_5), self.font, fontScale, text_color, thickness)
-
-        # cv2.rectangle(fr, (2, start_text), (2+text_width, fr.shape[0]), (255, 0, 0), 2)
-
-#         return fr
+        cv2.putText(self.fr, t_e, (int((self.fr.shape[0]*2)/720), start_text_1), self.font, lw/2.5, text_color, th)
+        cv2.putText(self.fr, p_e, (int((self.fr.shape[0]*2)/720), start_text_2), self.font, lw/2.5, text_color, th)
+        cv2.putText(self.fr, t_p, (int((self.fr.shape[0]*2)/720), start_text_3), self.font, lw/2.5, text_color, th)
+        cv2.putText(self.fr, p_p, (int((self.fr.shape[0]*2)/720), start_text_4), self.font, lw/2.5, text_color, th)
+        cv2.putText(self.fr, t_m, (int((self.fr.shape[0]*2)/720), start_text_5), self.font, lw/2.5, text_color, th)
 
     def draw_prob(self, emotion_yhat, best_n, startX, startY, endX, endY):
     
@@ -161,22 +147,17 @@ class VideoCamera(object):
         
         lw = max(round(sum(self.fr.shape) / 2 * 0.003), 2)
         
-        text2_color = (255, 0, 255)
+        text_color = (255, 255, 255)
         p1, p2 = (startX, startY), (endX, endY)
-        cv2.rectangle(self.fr, p1, p2, text2_color, thickness=lw, lineType=cv2.LINE_AA)
+        cv2.rectangle(self.fr, p1, p2, text_color, thickness=lw, lineType=cv2.LINE_AA)
                 
-        tf = max(lw - 1, 1)
-        fontScale = 2
-        text_fond = (0,0,0)
-        text_width_2, text_height_2 = cv2.getTextSize(label, self.font, lw / 3, tf)
+        th = max(lw - 1, 1)
+        text_width_2, text_height_2 = cv2.getTextSize(label, self.font, lw / 2, th)
         text_width_2 = text_width_2[0]+round(((p2[0]-p1[0])*10)/360)
         center_face = p1[0]+round((p2[0]-p1[0])/2)
         
         cv2.putText(self.fr, label, (center_face-round(text_width_2/2), p1[1] - round(((p2[0]-p1[0])*20)/360)), 
-                    self.font, lw / 3, text_fond, thickness=tf, lineType=cv2.LINE_AA)
-        
-        cv2.putText(self.fr, label, (center_face-round(text_width_2/2), p1[1] - round(((p2[0]-p1[0])*20)/360)), 
-                    self.font, lw / 3, text2_color, thickness=tf, lineType=cv2.LINE_AA)
+                    self.font, lw / 2, text_color, thickness=th, lineType=cv2.LINE_AA)
             
     def get_video(self):
         self.video = cv2.VideoCapture(self.path_video)
